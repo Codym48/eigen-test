@@ -11,19 +11,17 @@
 #ifndef EIGEN_BIDIAGONALIZATION_H
 #define EIGEN_BIDIAGONALIZATION_H
 
-#include "./InternalHeaderCheck.h"
-
 namespace Eigen { 
 
 namespace internal {
 // UpperBidiagonalization will probably be replaced by a Bidiagonalization class, don't want to make it stable API.
 // At the same time, it's useful to keep for now as it's about the only thing that is testing the BandMatrix class.
 
-template<typename MatrixType_> class UpperBidiagonalization
+template<typename _MatrixType> class UpperBidiagonalization
 {
   public:
 
-    typedef MatrixType_ MatrixType;
+    typedef _MatrixType MatrixType;
     enum {
       RowsAtCompileTime = MatrixType::RowsAtCompileTime,
       ColsAtCompileTime = MatrixType::ColsAtCompileTime,
@@ -129,7 +127,7 @@ void upperbidiagonalization_inplace_unblocked(MatrixType& mat,
        .makeHouseholderInPlace(mat.coeffRef(k,k+1), upper_diagonal[k]);
     // apply householder transform to remaining part of mat on the left
     mat.bottomRightCorner(remainingRows-1, remainingCols)
-       .applyHouseholderOnTheRight(mat.row(k).tail(remainingCols-1).adjoint(), mat.coeff(k,k+1), tempData);
+       .applyHouseholderOnTheRight(mat.row(k).tail(remainingCols-1).transpose(), mat.coeff(k,k+1), tempData);
   }
 }
 
@@ -204,7 +202,7 @@ void upperbidiagonalization_blocked_helper(MatrixType& A,
       {
         SubColumnType y_k( Y.col(k).tail(remainingCols) );
         
-        // let's use the beginning of column k of Y as a temporary vector
+        // let's use the begining of column k of Y as a temporary vector
         SubColumnType tmp( Y.col(k).head(k) );
         y_k.noalias()  = A.block(k,k+1, remainingRows,remainingCols).adjoint() * v_k; // bottleneck
         tmp.noalias()  = V_k1.adjoint()  * v_k;
@@ -233,7 +231,7 @@ void upperbidiagonalization_blocked_helper(MatrixType& A,
       {
         SubColumnType x_k ( X.col(k).tail(remainingRows-1) );
         
-        // let's use the beginning of column k of X as a temporary vectors
+        // let's use the begining of column k of X as a temporary vectors
         // note that tmp0 and tmp1 overlaps
         SubColumnType tmp0 ( X.col(k).head(k) ),
                       tmp1 ( X.col(k).head(k+1) );
@@ -357,8 +355,8 @@ void upperbidiagonalization_inplace_blocked(MatrixType& A, BidiagType& bidiagona
   }
 }
 
-template<typename MatrixType_>
-UpperBidiagonalization<MatrixType_>& UpperBidiagonalization<MatrixType_>::computeUnblocked(const MatrixType_& matrix)
+template<typename _MatrixType>
+UpperBidiagonalization<_MatrixType>& UpperBidiagonalization<_MatrixType>::computeUnblocked(const _MatrixType& matrix)
 {
   Index rows = matrix.rows();
   Index cols = matrix.cols();
@@ -379,8 +377,8 @@ UpperBidiagonalization<MatrixType_>& UpperBidiagonalization<MatrixType_>::comput
   return *this;
 }
 
-template<typename MatrixType_>
-UpperBidiagonalization<MatrixType_>& UpperBidiagonalization<MatrixType_>::compute(const MatrixType_& matrix)
+template<typename _MatrixType>
+UpperBidiagonalization<_MatrixType>& UpperBidiagonalization<_MatrixType>::compute(const _MatrixType& matrix)
 {
   Index rows = matrix.rows();
   Index cols = matrix.cols();

@@ -11,8 +11,6 @@
 #ifndef EIGEN_MATRIXBASE_H
 #define EIGEN_MATRIXBASE_H
 
-#include "./InternalHeaderCheck.h"
-
 namespace Eigen {
 
 /** \class MatrixBase
@@ -78,7 +76,6 @@ template<typename Derived> class MatrixBase
     using Base::coeffRef;
     using Base::lazyAssign;
     using Base::eval;
-    using Base::operator-;
     using Base::operator+=;
     using Base::operator-=;
     using Base::operator*=;
@@ -94,8 +91,8 @@ template<typename Derived> class MatrixBase
 
 #ifndef EIGEN_PARSED_BY_DOXYGEN
     /** type of the equivalent square matrix */
-    typedef Matrix<Scalar, internal::max_size_prefer_dynamic(RowsAtCompileTime, ColsAtCompileTime),
-                           internal::max_size_prefer_dynamic(RowsAtCompileTime, ColsAtCompileTime)> SquareMatrixType;
+    typedef Matrix<Scalar,EIGEN_SIZE_MAX(RowsAtCompileTime,ColsAtCompileTime),
+                          EIGEN_SIZE_MAX(RowsAtCompileTime,ColsAtCompileTime)> SquareMatrixType;
 #endif // not EIGEN_PARSED_BY_DOXYGEN
 
     /** \returns the size of the main diagonal, which is min(rows(),cols()).
@@ -125,6 +122,7 @@ template<typename Derived> class MatrixBase
 
 #define EIGEN_CURRENT_STORAGE_BASE_CLASS Eigen::MatrixBase
 #define EIGEN_DOC_UNARY_ADDONS(X,Y)
+#   include "../plugins/CommonCwiseUnaryOps.h"
 #   include "../plugins/CommonCwiseBinaryOps.h"
 #   include "../plugins/MatrixCwiseUnaryOps.h"
 #   include "../plugins/MatrixCwiseBinaryOps.h"
@@ -270,8 +268,6 @@ template<typename Derived> class MatrixBase
     Derived& setIdentity();
     EIGEN_DEVICE_FUNC
     Derived& setIdentity(Index rows, Index cols);
-    EIGEN_DEVICE_FUNC Derived& setUnit(Index i);
-    EIGEN_DEVICE_FUNC Derived& setUnit(Index newSize, Index i);
 
     bool isIdentity(const RealScalar& prec = NumTraits<Scalar>::dummy_precision()) const;
     bool isDiagonal(const RealScalar& prec = NumTraits<Scalar>::dummy_precision()) const;
@@ -300,7 +296,7 @@ template<typename Derived> class MatrixBase
     EIGEN_DEVICE_FUNC inline bool operator!=(const MatrixBase<OtherDerived>& other) const
     { return cwiseNotEqual(other).any(); }
 
-    NoAlias<Derived,Eigen::MatrixBase > EIGEN_DEVICE_FUNC noalias();
+    NoAlias<Derived,Eigen::MatrixBase > noalias();
 
     // TODO forceAlignedAccess is temporarily disabled
     // Need to find a nicer workaround.
@@ -330,7 +326,6 @@ template<typename Derived> class MatrixBase
 
     inline const PartialPivLU<PlainObject> lu() const;
 
-    EIGEN_DEVICE_FUNC
     inline const Inverse<Derived> inverse() const;
 
     template<typename ResultType>
@@ -340,15 +335,12 @@ template<typename Derived> class MatrixBase
       bool& invertible,
       const RealScalar& absDeterminantThreshold = NumTraits<Scalar>::dummy_precision()
     ) const;
-
     template<typename ResultType>
     inline void computeInverseWithCheck(
       ResultType& inverse,
       bool& invertible,
       const RealScalar& absDeterminantThreshold = NumTraits<Scalar>::dummy_precision()
     ) const;
-
-    EIGEN_DEVICE_FUNC
     Scalar determinant() const;
 
 /////////// Cholesky module ///////////
@@ -370,17 +362,8 @@ template<typename Derived> class MatrixBase
 
 /////////// SVD module ///////////
 
-    template<int Options = 0>
-    inline JacobiSVD<PlainObject, Options> jacobiSvd() const;
-    template<int Options = 0>
-    EIGEN_DEPRECATED
-    inline JacobiSVD<PlainObject, Options> jacobiSvd(unsigned int computationOptions) const;
-
-    template<int Options = 0>
-    inline BDCSVD<PlainObject, Options> bdcSvd() const;
-    template<int Options = 0>
-    EIGEN_DEPRECATED
-    inline BDCSVD<PlainObject, Options> bdcSvd(unsigned int computationOptions) const;
+    inline JacobiSVD<PlainObject> jacobiSvd(unsigned int computationOptions = 0) const;
+    inline BDCSVD<PlainObject>    bdcSvd(unsigned int computationOptions = 0) const;
 
 /////////// Geometry module ///////////
 
@@ -429,19 +412,15 @@ template<typename Derived> class MatrixBase
 
 ////////// Householder module ///////////
 
-    EIGEN_DEVICE_FUNC
     void makeHouseholderInPlace(Scalar& tau, RealScalar& beta);
     template<typename EssentialPart>
-    EIGEN_DEVICE_FUNC
     void makeHouseholder(EssentialPart& essential,
                          Scalar& tau, RealScalar& beta) const;
     template<typename EssentialPart>
-    EIGEN_DEVICE_FUNC
     void applyHouseholderOnTheLeft(const EssentialPart& essential,
                                    const Scalar& tau,
                                    Scalar* workspace);
     template<typename EssentialPart>
-    EIGEN_DEVICE_FUNC
     void applyHouseholderOnTheRight(const EssentialPart& essential,
                                     const Scalar& tau,
                                     Scalar* workspace);
@@ -449,10 +428,8 @@ template<typename Derived> class MatrixBase
 ///////// Jacobi module /////////
 
     template<typename OtherScalar>
-    EIGEN_DEVICE_FUNC
     void applyOnTheLeft(Index p, Index q, const JacobiRotation<OtherScalar>& j);
     template<typename OtherScalar>
-    EIGEN_DEVICE_FUNC
     void applyOnTheRight(Index p, Index q, const JacobiRotation<OtherScalar>& j);
 
 ///////// SparseCore module /////////
@@ -479,11 +456,6 @@ template<typename Derived> class MatrixBase
     const MatrixFunctionReturnValue<Derived> matrixFunction(StemFunction f) const;
     EIGEN_MATRIX_FUNCTION(MatrixFunctionReturnValue, cosh, hyperbolic cosine)
     EIGEN_MATRIX_FUNCTION(MatrixFunctionReturnValue, sinh, hyperbolic sine)
-#if EIGEN_HAS_CXX11_MATH
-    EIGEN_MATRIX_FUNCTION(MatrixFunctionReturnValue, atanh, inverse hyperbolic cosine)
-    EIGEN_MATRIX_FUNCTION(MatrixFunctionReturnValue, acosh, inverse hyperbolic cosine)
-    EIGEN_MATRIX_FUNCTION(MatrixFunctionReturnValue, asinh, inverse hyperbolic sine)
-#endif
     EIGEN_MATRIX_FUNCTION(MatrixFunctionReturnValue, cos, cosine)
     EIGEN_MATRIX_FUNCTION(MatrixFunctionReturnValue, sin, sine)
     EIGEN_MATRIX_FUNCTION(MatrixSquareRootReturnValue, sqrt, square root)

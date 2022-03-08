@@ -10,8 +10,6 @@
 #ifndef EIGEN_COMPRESSED_STORAGE_H
 #define EIGEN_COMPRESSED_STORAGE_H
 
-#include "./InternalHeaderCheck.h"
-
 namespace Eigen { 
 
 namespace internal {
@@ -20,13 +18,13 @@ namespace internal {
   * Stores a sparse set of values as a list of values and a list of indices.
   *
   */
-template<typename Scalar_,typename StorageIndex_>
+template<typename _Scalar,typename _StorageIndex>
 class CompressedStorage
 {
   public:
 
-    typedef Scalar_ Scalar;
-    typedef StorageIndex_ StorageIndex;
+    typedef _Scalar Scalar;
+    typedef _StorageIndex StorageIndex;
 
   protected:
 
@@ -209,20 +207,20 @@ class CompressedStorage
       return m_values[id];
     }
 
-    void moveChunk(Index from, Index to, Index chunkSize)
+    void prune(const Scalar& reference, const RealScalar& epsilon = NumTraits<RealScalar>::dummy_precision())
     {
-      eigen_internal_assert(to+chunkSize <= m_size);
-      if(to>from && from+chunkSize>to)
+      Index k = 0;
+      Index n = size();
+      for (Index i=0; i<n; ++i)
       {
-        // move backward
-        internal::smart_memmove(m_values+from,  m_values+from+chunkSize,  m_values+to);
-        internal::smart_memmove(m_indices+from, m_indices+from+chunkSize, m_indices+to);
+        if (!internal::isMuchSmallerThan(value(i), reference, epsilon))
+        {
+          value(k) = value(i);
+          index(k) = index(i);
+          ++k;
+        }
       }
-      else
-      {
-        internal::smart_copy(m_values+from,  m_values+from+chunkSize,  m_values+to);
-        internal::smart_copy(m_indices+from, m_indices+from+chunkSize, m_indices+to);
-      }
+      resize(k,0);
     }
 
   protected:
