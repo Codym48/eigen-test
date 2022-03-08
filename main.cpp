@@ -1,14 +1,38 @@
 #include <iostream>
 #include <Eigen/Dense>
  
-using Eigen::MatrixXd;
+using Eigen::AngleAxisd;
+using Eigen::Matrix3d;
+using Eigen::Vector3d;
  
 int main()
 {
-  MatrixXd m(2,2);
-  m(0,0) = 3;
-  m(1,0) = 2.5;
-  m(0,1) = -1;
-  m(1,1) = m(1,0) + m(0,1);
-  std::cout << m << std::endl;
+  /// Ned = North-East-Down ... Body = Nose-RightWing-Down
+  Vector3d velocityInNed(100.0, 0.0, 0.0);
+  std::cout << "velocityInNed = " << std::endl << velocityInNed << std::endl;
+
+  /// This is a Direction Cosine Matrix that, when premultiplying a
+  /// vector, will rotate that vector about the +y axis by 30deg.
+  /// This is a _rotation_ matrix, not a _transformation_ matrix.
+  Matrix3d dcm;
+  dcm = AngleAxisd(30.0*3.14/180.0, Vector3d::UnitY());
+  std::cout << "dcm = " << std::endl << dcm << std::endl;
+
+  /// This is invalid!
+  Vector3d velocityInBody = dcm * velocityInNed;
+  std::cout << "WRONG" << std::endl;
+  std::cout << "velocityInBody = " << std::endl << velocityInBody << std::endl;
+
+  /// This is valid.
+  velocityInBody = dcm.transpose() * velocityInNed;
+  std::cout << "RIGHT" << std::endl;
+  std::cout << "velocityInBody = " << std::endl << velocityInBody << std::endl;
+
+  /// This is a _transformation_ matrix, that can be used to transform
+  /// a vector expressed in Ned coordinates into one expressed in Body
+  /// coordinates, which by some naming conventions would be confusingly
+  /// named trueRotBodyFromNed
+  Matrix3d transformBodyFromNed = dcm.transpose();
+  std::cout << "transformBodyFromNed = " << std::endl << transformBodyFromNed << std::endl;
+  velocityInBody = transformBodyFromNed * velocityInNed;
 }
