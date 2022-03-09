@@ -11,11 +11,12 @@ int main()
   Vector3d velocityInNed(100.0, 0.0, 0.0);
   std::cout << "velocityInNed = " << std::endl << velocityInNed << std::endl;
 
+  /// Let's try to model a rotation of the Body w.r.t. Ned.
   /// This is a Direction Cosine Matrix that, when premultiplying a
-  /// vector, will rotate that vector about the +y axis by 30deg.
+  /// vector, will rotate that vector about the +Z axis by 30deg.
   /// This is a _rotation_ matrix, not a _transformation_ matrix.
-  Matrix3d dcm;
-  dcm = AngleAxisd(30.0*3.14/180.0, Vector3d::UnitY());
+  AngleAxisd aa = AngleAxisd(30.0*3.14/180.0, Vector3d::UnitZ());
+  Matrix3d dcm = aa.toRotationMatrix();
   std::cout << "dcm = " << std::endl << dcm << std::endl;
 
   /// This is invalid!
@@ -33,6 +34,16 @@ int main()
   /// coordinates, which by some naming conventions would be confusingly
   /// named trueRotBodyFromNed
   Matrix3d transformBodyFromNed = dcm.transpose();
-  std::cout << "transformBodyFromNed = " << std::endl << transformBodyFromNed << std::endl;
   velocityInBody = transformBodyFromNed * velocityInNed;
+  std::cout << "transformBodyFromNed = " << std::endl << transformBodyFromNed << std::endl;
+
+  /// All Euler Angle sequences store the angles in rotation order
+  /// ZYX Euler angles representing orientation of Body w.r.t. Ned (matches aa: <30,0,0>deg)
+  Vector3d ea1 = dcm.eulerAngles(2, 1, 0);
+  /// ZYX Euler Angles representing orientation of Ned w.r.t. Body (opposite of aa, and wrapped because of numeric issues: <150,-180,180>deg)
+  Vector3d ea2 = transformBodyFromNed.eulerAngles(2, 1, 0);
+  /// XYZ Euler Angles representing orientation of Body w.r.t. Ned (matches aa: <0,0,30>deg)
+  Vector3d ea3 = dcm.eulerAngles(0, 1, 2);
+  /// XYZ Euler Angles representing orientation of Ned w.r.t. Body (opposite of aa: <0,0,-30>deg)
+  Vector3d ea4 = transformBodyFromNed.eulerAngles(0, 1, 2);
 }
