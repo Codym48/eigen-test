@@ -462,65 +462,6 @@ struct arg_retval
 };
 
 /****************************************************************************
-* Implementation of expm1                                                   *
-****************************************************************************/
-
-// This implementation is based on GSL Math's expm1.
-namespace std_fallback {
-  // fallback expm1 implementation in case there is no expm1(Scalar) function in namespace of Scalar,
-  // or that there is no suitable std::expm1 function available. Implementation
-  // attributed to Kahan. See: http://www.plunk.org/~hatch/rightway.php.
-  template<typename Scalar>
-  EIGEN_DEVICE_FUNC inline Scalar expm1(const Scalar& x) {
-    EIGEN_STATIC_ASSERT_NON_INTEGER(Scalar)
-    typedef typename NumTraits<Scalar>::Real RealScalar;
-
-    EIGEN_USING_STD_MATH(exp);
-    Scalar u = exp(x);
-    if (numext::equal_strict(u, Scalar(1))) {
-      return x;
-    }
-    Scalar um1 = u - RealScalar(1);
-    if (numext::equal_strict(um1, Scalar(-1))) {
-      return RealScalar(-1);
-    }
-
-    EIGEN_USING_STD_MATH(log);
-    return (u - RealScalar(1)) * x / log(u);
-  }
-}
-
-template<typename Scalar>
-struct expm1_impl {
-  EIGEN_DEVICE_FUNC static inline Scalar run(const Scalar& x)
-  {
-    EIGEN_STATIC_ASSERT_NON_INTEGER(Scalar)
-    #if EIGEN_HAS_CXX11_MATH
-    using std::expm1;
-    #else
-    using std_fallback::expm1;
-    #endif
-    return expm1(x);
-  }
-};
-
-// Specialization for complex types that are not supported by std::expm1.
-template <typename RealScalar>
-struct expm1_impl<std::complex<RealScalar> > {
-  EIGEN_DEVICE_FUNC static inline std::complex<RealScalar> run(
-      const std::complex<RealScalar>& x) {
-    EIGEN_STATIC_ASSERT_NON_INTEGER(RealScalar)
-    return std_fallback::expm1(x);
-  }
-};
-
-template<typename Scalar>
-struct expm1_retval
-{
-  typedef Scalar type;
-};
-
-/****************************************************************************
 * Implementation of log1p                                                   *
 ****************************************************************************/
 
@@ -544,22 +485,12 @@ struct log1p_impl {
     EIGEN_STATIC_ASSERT_NON_INTEGER(Scalar)
     #if EIGEN_HAS_CXX11_MATH
     using std::log1p;
-    #else
-    using std_fallback::log1p;
     #endif
+    using std_fallback::log1p;
     return log1p(x);
   }
 };
 
-// Specialization for complex types that are not supported by std::log1p.
-template <typename RealScalar>
-struct log1p_impl<std::complex<RealScalar> > {
-  EIGEN_DEVICE_FUNC static inline std::complex<RealScalar> run(
-      const std::complex<RealScalar>& x) {
-    EIGEN_STATIC_ASSERT_NON_INTEGER(RealScalar)
-    return std_fallback::log1p(x);
-  }
-};
 
 template<typename Scalar>
 struct log1p_retval
@@ -1012,7 +943,7 @@ inline EIGEN_MATHFUNC_RETVAL(log1p, Scalar) log1p(const Scalar& x)
   return EIGEN_MATHFUNC_IMPL(log1p, Scalar)::run(x);
 }
 
-#ifdef EIGEN_CUDACC
+#ifdef __CUDACC__
 template<> EIGEN_DEVICE_FUNC EIGEN_ALWAYS_INLINE
 float log1p(const float &x) { return ::log1pf(x); }
 
@@ -1046,7 +977,7 @@ T (floor)(const T& x)
   return floor(x);
 }
 
-#ifdef EIGEN_CUDACC
+#ifdef __CUDACC__
 template<> EIGEN_DEVICE_FUNC EIGEN_ALWAYS_INLINE
 float floor(const float &x) { return ::floorf(x); }
 
@@ -1062,7 +993,7 @@ T (ceil)(const T& x)
   return ceil(x);
 }
 
-#ifdef EIGEN_CUDACC
+#ifdef __CUDACC__
 template<> EIGEN_DEVICE_FUNC EIGEN_ALWAYS_INLINE
 float ceil(const float &x) { return ::ceilf(x); }
 
@@ -1110,7 +1041,7 @@ T log(const T &x) {
   return log(x);
 }
 
-#ifdef EIGEN_CUDACC
+#ifdef __CUDACC__
 template<> EIGEN_DEVICE_FUNC EIGEN_ALWAYS_INLINE
 float log(const float &x) { return ::logf(x); }
 
@@ -1138,7 +1069,7 @@ EIGEN_ALWAYS_INLINE float   abs(float x) { return cl::sycl::fabs(x); }
 EIGEN_ALWAYS_INLINE double  abs(double x) { return cl::sycl::fabs(x); }
 #endif // defined(__SYCL_DEVICE_ONLY__)
 
-#ifdef EIGEN_CUDACC
+#ifdef __CUDACC__
 template<> EIGEN_DEVICE_FUNC EIGEN_ALWAYS_INLINE
 float abs(const float &x) { return ::fabsf(x); }
 
@@ -1163,7 +1094,7 @@ T exp(const T &x) {
   return exp(x);
 }
 
-#ifdef EIGEN_CUDACC
+#ifdef __CUDACC__
 template<> EIGEN_DEVICE_FUNC EIGEN_ALWAYS_INLINE
 float exp(const float &x) { return ::expf(x); }
 
@@ -1178,7 +1109,7 @@ T cos(const T &x) {
   return cos(x);
 }
 
-#ifdef EIGEN_CUDACC
+#ifdef __CUDACC__
 template<> EIGEN_DEVICE_FUNC EIGEN_ALWAYS_INLINE
 float cos(const float &x) { return ::cosf(x); }
 
@@ -1193,7 +1124,7 @@ T sin(const T &x) {
   return sin(x);
 }
 
-#ifdef EIGEN_CUDACC
+#ifdef __CUDACC__
 template<> EIGEN_DEVICE_FUNC EIGEN_ALWAYS_INLINE
 float sin(const float &x) { return ::sinf(x); }
 
@@ -1208,7 +1139,7 @@ T tan(const T &x) {
   return tan(x);
 }
 
-#ifdef EIGEN_CUDACC
+#ifdef __CUDACC__
 template<> EIGEN_DEVICE_FUNC EIGEN_ALWAYS_INLINE
 float tan(const float &x) { return ::tanf(x); }
 
@@ -1223,7 +1154,7 @@ T acos(const T &x) {
   return acos(x);
 }
 
-#ifdef EIGEN_CUDACC
+#ifdef __CUDACC__
 template<> EIGEN_DEVICE_FUNC EIGEN_ALWAYS_INLINE
 float acos(const float &x) { return ::acosf(x); }
 
@@ -1238,7 +1169,7 @@ T asin(const T &x) {
   return asin(x);
 }
 
-#ifdef EIGEN_CUDACC
+#ifdef __CUDACC__
 template<> EIGEN_DEVICE_FUNC EIGEN_ALWAYS_INLINE
 float asin(const float &x) { return ::asinf(x); }
 
@@ -1253,7 +1184,7 @@ T atan(const T &x) {
   return atan(x);
 }
 
-#ifdef EIGEN_CUDACC
+#ifdef __CUDACC__
 template<> EIGEN_DEVICE_FUNC EIGEN_ALWAYS_INLINE
 float atan(const float &x) { return ::atanf(x); }
 
@@ -1269,7 +1200,7 @@ T cosh(const T &x) {
   return cosh(x);
 }
 
-#ifdef EIGEN_CUDACC
+#ifdef __CUDACC__
 template<> EIGEN_DEVICE_FUNC EIGEN_ALWAYS_INLINE
 float cosh(const float &x) { return ::coshf(x); }
 
@@ -1284,7 +1215,7 @@ T sinh(const T &x) {
   return sinh(x);
 }
 
-#ifdef EIGEN_CUDACC
+#ifdef __CUDACC__
 template<> EIGEN_DEVICE_FUNC EIGEN_ALWAYS_INLINE
 float sinh(const float &x) { return ::sinhf(x); }
 
@@ -1299,12 +1230,12 @@ T tanh(const T &x) {
   return tanh(x);
 }
 
-#if (!defined(EIGEN_CUDACC)) && EIGEN_FAST_MATH
+#if (!defined(__CUDACC__)) && EIGEN_FAST_MATH
 EIGEN_DEVICE_FUNC EIGEN_ALWAYS_INLINE
 float tanh(float x) { return internal::generic_fast_tanh_float(x); }
 #endif
 
-#ifdef EIGEN_CUDACC
+#ifdef __CUDACC__
 template<> EIGEN_DEVICE_FUNC EIGEN_ALWAYS_INLINE
 float tanh(const float &x) { return ::tanhf(x); }
 
@@ -1319,7 +1250,7 @@ T fmod(const T& a, const T& b) {
   return fmod(a, b);
 }
 
-#ifdef EIGEN_CUDACC
+#ifdef __CUDACC__
 template <>
 EIGEN_DEVICE_FUNC EIGEN_ALWAYS_INLINE
 float fmod(const float& a, const float& b) {

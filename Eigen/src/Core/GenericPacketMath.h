@@ -518,7 +518,7 @@ inline void palign(PacketType& first, const PacketType& second)
 ***************************************************************************/
 
 // Eigen+CUDA does not support complexes.
-#ifndef EIGEN_CUDACC
+#ifndef __CUDACC__
 
 template<> inline std::complex<float> pmul(const std::complex<float>& a, const std::complex<float>& b)
 { return std::complex<float>(a.real()*b.real() - a.imag()*b.imag(), a.imag()*b.real() + a.real()*b.imag()); }
