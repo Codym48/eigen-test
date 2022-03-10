@@ -3,6 +3,7 @@
  
 using Eigen::AngleAxisd;
 using Eigen::Matrix3d;
+using Eigen::Quaterniond;
 using Eigen::Vector3d;
  
 int main()
@@ -15,7 +16,7 @@ int main()
   /// This is a Direction Cosine Matrix that, when premultiplying a
   /// vector, will rotate that vector about the +Z axis by 30deg.
   /// This is a _rotation_ matrix, not a _transformation_ matrix.
-  AngleAxisd aa = AngleAxisd(30.0*3.14/180.0, Vector3d::UnitZ());
+  AngleAxisd aa = AngleAxisd(30.0*EIGEN_PI/180.0, Vector3d::UnitZ());
   Matrix3d dcm = aa.toRotationMatrix();
   std::cout << "dcm = " << std::endl << dcm << std::endl;
 
@@ -46,4 +47,13 @@ int main()
   Vector3d ea3 = dcm.eulerAngles(0, 1, 2);
   /// XYZ Euler Angles representing orientation of Ned w.r.t. Body (opposite of aa: <0,0,-30>deg)
   Vector3d ea4 = transformBodyFromNed.eulerAngles(0, 1, 2);
+
+  /// See if the DCM->Euler angle conversion trips over asin(>1.0)
+  aa = AngleAxisd(EIGEN_PI/2.0, Vector3d::UnitY());
+  dcm = aa.toRotationMatrix(); ///< 1.0 in the (0,2) location
+  ea1 = dcm.eulerAngles(2, 1, 0);
+  dcm(0,2) += 0.0000000002; ///< >1.0 in the (0,2) location
+  dcm(2,0) -= 0.0000000002; ///< <-1.0 in the (2,0) location
+  ea2 = dcm.eulerAngles(2, 1, 0);
+  std::cout << "ea2 = " << std::endl << ea2 << std::endl;
 }
